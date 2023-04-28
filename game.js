@@ -1,5 +1,7 @@
+// create a new scene
 let gameScene = new Phaser.Scene("Game");
 
+// set the configuration of the game
 let config = {
   type: Phaser.AUTO,
   width: 800,
@@ -7,8 +9,10 @@ let config = {
   scene: gameScene,
 };
 
+// create a new game, pass the configuration
 let game = new Phaser.Game(config);
 
+// initialize variables
 let timer;
 let planets;
 let scoreText;
@@ -22,7 +26,9 @@ let gameStarted = false;
 let gameOver = false;
 let typedWordText;
 
+// Load assets
 gameScene.preload = function () {
+  // load images
   this.load.image("background", "assets/background.png");
   this.load.image("sun", "assets/sun.png");
   this.load.image("mercury", "assets/mercury.png");
@@ -38,7 +44,9 @@ gameScene.preload = function () {
   this.load.image("startButton", "assets/startButton.png");
 };
 
+// called once after the preload ends
 gameScene.create = function () {
+  // create bg sprite
   this.add
     .sprite(0, 0, "background")
     .setPosition(
@@ -51,12 +59,14 @@ gameScene.create = function () {
   typedWordText = this.add.text(400, 480, "");
   typedWordText.setOrigin(0.5); // This will center the text horizontally based on its position
 
+  // create satellite
   this.add
     .sprite(0, 0, "satellite")
     .setScale(5)
     .setAngle(320)
     .setPosition(400, 550);
 
+  // create meteorite
   const meteorite = this.add
     .sprite(0, 0, "meteorite")
     .setScale(2)
@@ -66,6 +76,7 @@ gameScene.create = function () {
 
   planets = this.add.group();
 
+  // create start button
   const startButton = this.add
     .sprite(
       this.sys.game.config.width / 2,
@@ -87,10 +98,10 @@ gameScene.create = function () {
       });
       timerEventAdded = true;
     }
-
     spawnPlanets.call(this);
   });
 
+  // keyboard input
   this.input.keyboard.on("keydown", (event) => {
     if (!gameOver && gameStarted) {
       if (event.key === "Enter") {
@@ -106,6 +117,7 @@ gameScene.create = function () {
     }
   });
 
+  // check if the typed word matches the planets
   function checkWord() {
     const targetTextContainer = planets.children.entries.find(
       (textContainer) => {
@@ -127,18 +139,22 @@ gameScene.create = function () {
         );
       });
 
+      // remove the planet
       if (targetPlanet) {
         targetPlanet.destroy();
       }
-
+      // remove the planet text
       targetTextContainer.destroy();
       moveMeteorite.call(this, targetTextContainer.x, targetTextContainer.y);
 
+      // update score
       score += 1;
       scoreText.setText(`Score: ${score}`);
 
       planetsRemoved += 1;
+      // every 3 planets removed, increase the falling speed of planets
       if (planetsRemoved % 3 === 0) {
+        // increase the falling speed of planets by 30%
         scoreFactor += 0.3;
       }
     }
@@ -146,6 +162,7 @@ gameScene.create = function () {
     typedWord = "";
   }
 
+  // meteorite animation
   function moveMeteorite(targetX, targetY) {
     meteorite.visible = true;
     meteorite.setPosition(400, 430);
@@ -162,14 +179,17 @@ gameScene.create = function () {
   }
 };
 
+// this is called up to 60 times per second
 gameScene.update = function () {
   if (!gameOver && gameStarted) {
     planets.children.iterate(function (planet) {
+      // increase falling speed of planets
       planet.y += 0.2 * scoreFactor;
     });
   }
 };
 
+// function to update the timer
 function updateTimer() {
   if (gameTimeLimit > 0) {
     gameTimeLimit -= 1;
@@ -188,6 +208,7 @@ function updateTimer() {
 //     .join("");
 // }
 
+// function to spawn planets
 function spawnPlanets() {
   if (!gameOver) {
     const planetKeys = [
@@ -201,19 +222,17 @@ function spawnPlanets() {
       "uranus",
       "neptune",
     ];
-    const scaleFactors = [1.5, 2, 2, 1.5, 1, 0.8, 1, 1, 1];
 
+    // planet related variables (scale, random index, random delay, text, text background)
+    const scaleFactors = [1.5, 2, 2, 1.5, 1, 0.8, 1, 1, 1];
     const randomIndex = Math.floor(Math.random() * planetKeys.length);
     const randomX = Math.random() * (this.sys.game.config.width - 100) + 50;
     const randomDelay = Math.random() * 1000 + 500;
-
     const planet = planets.create(randomX, -50, planetKeys[randomIndex]);
     planet.setScale(scaleFactors[randomIndex]);
-
     const textStyle = { font: "16px Arial", fill: "#ffffff" };
     const text = this.add.text(0, 0, planetKeys[randomIndex], textStyle);
     text.setOrigin(0.5, 0.5);
-
     const textBackground = this.add.graphics();
     textBackground.fillStyle(0x000000, 0.8);
     textBackground.fillRect(
@@ -222,14 +241,13 @@ function spawnPlanets() {
       text.width + 4,
       text.height + 4
     );
-
     const textContainer = this.add.container(randomX, -50, [
       textBackground,
       text,
     ]);
+    // text z-index
     textContainer.depth = 2;
     planets.add(textContainer);
-
     this.time.addEvent({
       delay: randomDelay,
       callback: spawnPlanets,
