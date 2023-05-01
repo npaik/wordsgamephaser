@@ -78,7 +78,7 @@ gameScene.create = function () {
     .setPosition(400, 550);
 
   // create meteorite
-  const meteorite = this.add
+  let meteorite = this.add
     .sprite(0, 0, "meteorite")
     .setScale(2)
     .setAngle(220)
@@ -186,6 +186,9 @@ gameScene.create = function () {
     let angleInDegrees = Phaser.Math.RadToDeg(angle);
     // Set the satellite angle
     satellite.setAngle(angleInDegrees + 45); // Update the angle offset to 45 degrees
+
+    // Set the meteorite angle to match the satellite angle
+    meteorite.setAngle(angleInDegrees);
 
     meteorite.visible = true;
     meteorite.setPosition(400, 430);
