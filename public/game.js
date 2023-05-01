@@ -71,7 +71,7 @@ gameScene.create = function () {
   typedWordText.setOrigin(0.5); // This will center the text horizontally based on its position
 
   // create satellite
-  this.add
+  let satellite = this.add
     .sprite(0, 0, "satellite")
     .setScale(5)
     .setAngle(320)
@@ -175,6 +175,18 @@ gameScene.create = function () {
 
   // meteorite animation
   function moveMeteorite(targetX, targetY) {
+    // Calculate the angle between the satellite and the target
+    let angle = Phaser.Math.Angle.Between(
+      satellite.x,
+      satellite.y,
+      targetX,
+      targetY
+    );
+    // Convert the angle to degrees
+    let angleInDegrees = Phaser.Math.RadToDeg(angle);
+    // Set the satellite angle
+    satellite.setAngle(angleInDegrees + 45); // Update the angle offset to 45 degrees
+
     meteorite.visible = true;
     meteorite.setPosition(400, 430);
 
