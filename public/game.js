@@ -16,6 +16,7 @@ let game = new Phaser.Game(config);
 let timer;
 let planets;
 let scoreText;
+let highestScoreText;
 let score = 0;
 let planetsRemoved = 0;
 let gameTimeLimit = 30;
@@ -25,6 +26,7 @@ let timerEventAdded = false;
 let gameStarted = false;
 let gameOver = false;
 let typedWordText;
+let scoreSaved = false;
 
 // Load assets
 gameScene.preload = function () {
@@ -46,6 +48,15 @@ gameScene.preload = function () {
 
 // called once after the preload ends
 gameScene.create = function () {
+  highestScoreText = this.add.text(
+    this.sys.game.config.width / 2,
+    0,
+    "Highest Score: 0"
+  );
+  highestScoreText.setOrigin(0.5, 0); // This will center the text horizontally based on its position
+
+  getHighestScore.call(this);
+
   // create bg sprite
   this.add
     .sprite(0, 0, "background")
@@ -177,6 +188,13 @@ gameScene.create = function () {
       },
     });
   }
+
+  highestScoreText = this.add.text(
+    this.sys.game.config.width / 2,
+    0,
+    "Highest Score: 0"
+  );
+  highestScoreText.setOrigin(0.5, 0); // This will center the text horizontally based on its position
 };
 
 // this is called up to 60 times per second
@@ -186,8 +204,50 @@ gameScene.update = function () {
       // increase falling speed of planets
       planet.y += 0.2 * scoreFactor;
     });
+  } else if (gameOver && !scoreSaved) {
+    planets.children.iterate(function (planet) {
+      // stop the planets from falling
+      planet.y = planet.y;
+    });
+    // saveScore(); // Remove this line to avoid calling saveScore() twice
+    scoreSaved = true;
   }
 };
+
+// send the score to the server
+async function saveScore(username) {
+  try {
+    const response = await fetch("/api/scores", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username, score }),
+    });
+    if (response.ok) {
+      const result = await response.json();
+      console.log("Score saved:", result);
+      // Update the highest score after saving the current score
+      getHighestScore();
+    } else {
+      console.warn("Unable to save score:", response);
+    }
+  } catch (error) {
+    console.warn(error);
+  }
+}
+
+function handleHighScoreName(score) {
+  const name = prompt(
+    "Congratulations! You have reached the highest score. Please enter your name:"
+  );
+
+  if (name) {
+    saveScore(name, score);
+  } else {
+    alert("Please enter a valid name to save your high score.");
+  }
+}
 
 // function to update the timer
 function updateTimer() {
@@ -196,17 +256,17 @@ function updateTimer() {
     timer.setText(`Timer: ${gameTimeLimit}`);
   } else {
     gameOver = true;
+    planets.clear(true, true); // Remove all planets and text from the scene
+    this.time.delayedCall(
+      0,
+      () => {
+        gameOverDisplay.call(this);
+      },
+      null,
+      this
+    );
   }
 }
-
-// function randomizeCase(str) {
-//   return str
-//     .split("")
-//     .map((char) => {
-//       return Math.random() < 0.5 ? char.toUpperCase() : char.toLowerCase();
-//     })
-//     .join("");
-// }
 
 // function to spawn planets
 function spawnPlanets() {
@@ -255,3 +315,64 @@ function spawnPlanets() {
     });
   }
 }
+
+function gameOverDisplay() {
+  // Display "Game Over" text
+  const gameOverText = this.add.text(
+    this.sys.game.config.width / 2,
+    this.sys.game.config.height / 2 - 50,
+    "Game Over",
+    { fontSize: "32px", fontStyle: "bold", color: "#FFFFFF" }
+  );
+  gameOverText.setOrigin(0.5, 0.5);
+
+  // Check if the user achieved the highest score
+  getHighestScore().then((highestScore) => {
+    if (score > highestScore) {
+      // Prompt for the username input
+      const username = prompt(
+        "Congratulations! You have reached the highest score. Please enter your name:"
+      );
+
+      if (username) {
+        saveScore(username);
+      } else {
+        alert("Please enter a valid name to save your high score.");
+      }
+    }
+  });
+}
+
+function resetGame() {
+  gameTimeLimit = 30;
+  score = 0;
+  scoreText.setText(`Score: ${score}`);
+  timer.setText(`Timer: ${gameTimeLimit}`);
+  gameStarted = true;
+  spawnPlanets.call(this);
+}
+
+async function getHighestScore() {
+  try {
+    const response = await fetch("/api/scores");
+
+    if (response.ok) {
+      const scores = await response.json();
+      const highestScoreEntry = scores[0];
+      const highestScore = highestScoreEntry ? highestScoreEntry.score : 0;
+      const highestUsername = highestScoreEntry
+        ? highestScoreEntry.username
+        : "";
+      highestScoreText.setText(
+        `Highest Score: ${highestScore} by ${highestUsername}`
+      );
+      return highestScore;
+    } else {
+      console.log("Error getting highest score");
+    }
+  } catch (error) {
+    console.warn(error);
+  }
+}
+
+getHighestScore();
