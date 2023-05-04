@@ -53,6 +53,7 @@ gameScene.create = function () {
     typedWord = event.target.value;
     typedWordText.setText(typedWord);
   });
+
   offscreenInput.addEventListener("focus", () => {
     if (!gameStarted) {
       offscreenInput.blur();
@@ -64,7 +65,7 @@ gameScene.create = function () {
     0,
     "Highest Score: 0"
   );
-  highestScoreText.setOrigin(0.5, 0); // This will center the text horizontally based on its position
+  highestScoreText.setOrigin(0.5, 0);
 
   getHighestScore.call(this);
 
@@ -79,7 +80,7 @@ gameScene.create = function () {
   timer = this.add.text(700, 0, `Timer: ${gameTimeLimit}`);
   timer.depth = 1;
   typedWordText = this.add.text(400, 480, "");
-  typedWordText.setOrigin(0.5); // This will center the text horizontally based on its position
+  typedWordText.setOrigin(0.5);
 
   // create satellite
   let satellite = this.add
@@ -379,6 +380,7 @@ function spawnPlanets() {
   }
 }
 
+// game over display
 function gameOverDisplay() {
   // Display "Game Over" text
   const gameOverText = this.add.text(
@@ -392,22 +394,36 @@ function gameOverDisplay() {
   // Check if the user achieved the highest score
   getHighestScore().then((highestScore) => {
     if (score > highestScore) {
-      // Prompt for the username input
-      const username = prompt(
-        "Congratulations! You have reached the highest score. Please enter your name:"
-      );
-
-      if (username) {
-        saveScore(username);
-      } else {
-        alert("Please enter a valid name to save your high score.");
-      }
+      handleHighScoreName(score);
     }
+  });
+
+  // Show the start button again
+  const startButton = this.add
+    .sprite(
+      this.sys.game.config.width / 2,
+      this.sys.game.config.height / 2,
+      "startButton"
+    )
+    .setInteractive();
+
+  // Set the start button listener to reset the game
+  startButton.once("pointerdown", () => {
+    gameStarted = false;
+    gameOver = false;
+    scoreSaved = false;
+    gameTimeLimit = 30;
+    timerEventAdded = false;
+    startButton.destroy();
+    gameOverText.destroy();
+    resetGame.call(this);
   });
 }
 
+// reset the game
 function resetGame() {
-  gameTimeLimit = 30;
+  typedWord = "";
+  typedWordText.setText("");
   score = 0;
   scoreText.setText(`Score: ${score}`);
   timer.setText(`Timer: ${gameTimeLimit}`);
@@ -415,6 +431,7 @@ function resetGame() {
   spawnPlanets.call(this);
 }
 
+// get highest score from the server
 async function getHighestScore() {
   try {
     const response = await fetch("/api/scores");
