@@ -27,6 +27,7 @@ let gameStarted = false;
 let gameOver = false;
 let typedWordText;
 let scoreSaved = false;
+let top10ScoresShown = false;
 
 // Load assets
 gameScene.preload = function () {
@@ -143,6 +144,7 @@ gameScene.create = function () {
 
   window.addEventListener("keydown", handleKeyboardInput.bind(this));
 
+  // check if the typed word matches any of the words in the planets
   function checkWord() {
     const targetTextContainer = planets.children.entries.find(
       (textContainer) => {
@@ -387,26 +389,10 @@ function gameOverDisplay() {
     }
   });
 
-  // Show the start button again
-  const startButton = this.add
-    .sprite(
-      this.sys.game.config.width / 2,
-      this.sys.game.config.height / 2,
-      "startButton"
-    )
-    .setInteractive();
+  // Show the top 10 scores
+  showTop10Scores.call(this);
 
-  // Set the start button listener to reset the game
-  startButton.once("pointerdown", () => {
-    gameStarted = false;
-    gameOver = false;
-    scoreSaved = false;
-    gameTimeLimit = 30;
-    timerEventAdded = false;
-    startButton.destroy();
-    gameOverText.destroy();
-    resetGame.call(this);
-  });
+  // The start button and its event listener have been removed
 }
 
 // reset the game
@@ -438,6 +424,33 @@ async function getHighestScore() {
       return highestScore;
     } else {
       console.log("Error getting highest score");
+    }
+  } catch (error) {
+    console.warn(error);
+  }
+}
+
+async function showTop10Scores() {
+  try {
+    const response = await fetch("/api/scores/top10");
+
+    if (response.ok) {
+      const scores = await response.json();
+      let top10ScoresText = "Top 10 Scores:\n";
+
+      scores.forEach((entry, index) => {
+        top10ScoresText += `${index + 1}. ${entry.username}: ${entry.score}\n`;
+      });
+
+      const top10ScoresDisplay = this.add.text(
+        this.sys.game.config.width / 2,
+        this.sys.game.config.height / 2 + 50,
+        top10ScoresText,
+        { fontSize: "16px", fontStyle: "bold", color: "#FFFFFF" }
+      );
+      top10ScoresDisplay.setOrigin(0.5, 0.5);
+    } else {
+      console.log("Error getting top 10 scores");
     }
   } catch (error) {
     console.warn(error);

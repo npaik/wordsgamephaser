@@ -36,6 +36,17 @@ api.get("/scores", async (req, res) => {
   res.json(scores);
 });
 
+api.get("/scores/top10", async (req, res) => {
+  const top10Scores = await prisma.score.findMany({
+    orderBy: {
+      score: "desc",
+    },
+    take: 10,
+  });
+
+  res.json(top10Scores);
+});
+
 app.use("/api", api);
 
 const PORT = process.env.PORT || 8000;
