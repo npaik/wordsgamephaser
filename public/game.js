@@ -48,6 +48,17 @@ gameScene.preload = function () {
 
 // called once after the preload ends
 gameScene.create = function () {
+  const offscreenInput = document.getElementById("offscreen-input");
+  offscreenInput.addEventListener("input", (event) => {
+    typedWord = event.target.value;
+    typedWordText.setText(typedWord);
+  });
+  offscreenInput.addEventListener("focus", () => {
+    if (!gameStarted) {
+      offscreenInput.blur();
+    }
+  });
+
   highestScoreText = this.add.text(
     this.sys.game.config.width / 2,
     0,
@@ -96,9 +107,27 @@ gameScene.create = function () {
     )
     .setInteractive();
 
+  // startButton.once("pointerdown", () => {
+  //   gameStarted = true;
+  //   startButton.setVisible(false);
+
+  //   if (!timerEventAdded) {
+  //     this.time.addEvent({
+  //       delay: 1000,
+  //       callback: updateTimer,
+  //       callbackScope: this,
+  //       loop: true,
+  //     });
+  //     timerEventAdded = true;
+  //   }
+  //   spawnPlanets.call(this);
+  // });
+
   startButton.once("pointerdown", () => {
     gameStarted = true;
     startButton.setVisible(false);
+
+    offscreenInput.focus();
 
     if (!timerEventAdded) {
       this.time.addEvent({
@@ -112,8 +141,7 @@ gameScene.create = function () {
     spawnPlanets.call(this);
   });
 
-  // keyboard input
-  this.input.keyboard.on("keydown", (event) => {
+  function handleKeyboardInput(event) {
     if (!gameOver && gameStarted) {
       if (event.key === "Enter") {
         checkWord.call(this);
@@ -126,7 +154,25 @@ gameScene.create = function () {
       }
       typedWordText.setText(typedWord);
     }
-  });
+  }
+
+  window.addEventListener("keydown", handleKeyboardInput.bind(this));
+
+  // keyboard input
+  // this.input.keyboard.on("keydown", (event) => {
+  // if (!gameOver && gameStarted) {
+  //   if (event.key === "Enter") {
+  //     checkWord.call(this);
+  //   } else if (event.key === "Backspace") {
+  //     typedWord = typedWord.slice(0, -1);
+  //   } else if (event.key === " ") {
+  //     typedWord += " ";
+  //   } else if (event.key.length === 1 && event.key.match(/[a-zA-Z]/)) {
+  //     typedWord += event.key;
+  //   }
+  //   typedWordText.setText(typedWord);
+  //   }
+  // });
 
   // check if the typed word matches the planets
   function checkWord() {
@@ -169,6 +215,8 @@ gameScene.create = function () {
         scoreFactor += 0.3;
       }
     }
+    const offscreenInput = document.getElementById("offscreen-input");
+    offscreenInput.value = "";
 
     typedWord = "";
   }
