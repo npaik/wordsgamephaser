@@ -108,22 +108,6 @@ gameScene.create = function () {
     )
     .setInteractive();
 
-  // startButton.once("pointerdown", () => {
-  //   gameStarted = true;
-  //   startButton.setVisible(false);
-
-  //   if (!timerEventAdded) {
-  //     this.time.addEvent({
-  //       delay: 1000,
-  //       callback: updateTimer,
-  //       callbackScope: this,
-  //       loop: true,
-  //     });
-  //     timerEventAdded = true;
-  //   }
-  //   spawnPlanets.call(this);
-  // });
-
   startButton.once("pointerdown", () => {
     gameStarted = true;
     startButton.setVisible(false);
@@ -159,50 +143,28 @@ gameScene.create = function () {
 
   window.addEventListener("keydown", handleKeyboardInput.bind(this));
 
-  // keyboard input
-  // this.input.keyboard.on("keydown", (event) => {
-  // if (!gameOver && gameStarted) {
-  //   if (event.key === "Enter") {
-  //     checkWord.call(this);
-  //   } else if (event.key === "Backspace") {
-  //     typedWord = typedWord.slice(0, -1);
-  //   } else if (event.key === " ") {
-  //     typedWord += " ";
-  //   } else if (event.key.length === 1 && event.key.match(/[a-zA-Z]/)) {
-  //     typedWord += event.key;
-  //   }
-  //   typedWordText.setText(typedWord);
-  //   }
-  // });
-
-  // check if the typed word matches the planets
   function checkWord() {
     const targetTextContainer = planets.children.entries.find(
       (textContainer) => {
         const text = textContainer.list && textContainer.list[1];
-        return (
-          text &&
-          text.text &&
-          text.text.toLowerCase() === typedWord.toLowerCase()
-        );
+        return text && text.text && text.text === typedWord.replace(/\s+/g, "");
       }
     );
 
     if (targetTextContainer) {
-      const targetPlanet = planets.children.entries.find((planet) => {
-        return (
-          planet.texture &&
-          planet.texture.key &&
-          planet.texture.key.toLowerCase() === typedWord.toLowerCase()
-        );
-      });
-
-      // remove the planet
-      if (targetPlanet) {
-        targetPlanet.destroy();
-      }
-      // remove the planet text
+      // remove the planet container
       targetTextContainer.destroy();
+
+      // Find and remove the planet associated with the targetTextContainer
+      const planet = planets.children.entries.find(
+        (planet) =>
+          planet.x === targetTextContainer.x &&
+          planet.y === targetTextContainer.y
+      );
+      if (planet) {
+        planet.destroy();
+      }
+
       moveMeteorite.call(this, targetTextContainer.x, targetTextContainer.y);
 
       // update score
@@ -264,14 +226,15 @@ gameScene.create = function () {
 // this is called up to 60 times per second
 gameScene.update = function () {
   if (!gameOver && gameStarted) {
-    planets.children.iterate(function (planet) {
+    planets.children.iterate(function (planetContainer) {
       // increase falling speed of planets
-      planet.y += 0.2 * scoreFactor;
+      planetContainer.y += 0.2 * scoreFactor;
+      planetContainer.update(); // Update the text container position
     });
   } else if (gameOver && !scoreSaved) {
-    planets.children.iterate(function (planet) {
+    planets.children.iterate(function (planetContainer) {
       // stop the planets from falling
-      planet.y = planet.y;
+      planetContainer.y = planetContainer.y;
     });
     // saveScore(); // Remove this line to avoid calling saveScore() twice
     scoreSaved = true;
@@ -355,7 +318,11 @@ function spawnPlanets() {
     const planet = planets.create(randomX, -50, planetKeys[randomIndex]);
     planet.setScale(scaleFactors[randomIndex]);
     const textStyle = { font: "16px Arial", fill: "#ffffff" };
-    const text = this.add.text(0, 0, planetKeys[randomIndex], textStyle);
+
+    // Randomize capitalization of the text
+    const randomizedText = randomizeTextCapitalization(planetKeys[randomIndex]);
+
+    const text = this.add.text(0, 0, randomizedText, textStyle);
     text.setOrigin(0.5, 0.5);
     const textBackground = this.add.graphics();
     textBackground.fillStyle(0x000000, 0.8);
@@ -365,6 +332,7 @@ function spawnPlanets() {
       text.width + 4,
       text.height + 4
     );
+
     const textContainer = this.add.container(randomX, -50, [
       textBackground,
       text,
@@ -372,12 +340,33 @@ function spawnPlanets() {
     // text z-index
     textContainer.depth = 2;
     planets.add(textContainer);
+
+    // Add an update function to update the text container position
+    textContainer.update = function () {
+      this.x = planet.x;
+      this.y = planet.y;
+    };
+
     this.time.addEvent({
       delay: randomDelay,
       callback: spawnPlanets,
       callbackScope: this,
     });
   }
+}
+
+// Randomize capitalization of a string
+function randomizeTextCapitalization(text) {
+  let randomizedText = "";
+
+  for (let i = 0; i < text.length; i++) {
+    const randomBoolean = Math.random() >= 0.5;
+    randomizedText += randomBoolean
+      ? text[i].toUpperCase()
+      : text[i].toLowerCase();
+  }
+
+  return randomizedText;
 }
 
 // game over display
