@@ -7,6 +7,15 @@
     <link rel="stylesheet" href="styles.css" />
     <script src="//cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.js"></script>
     <script defer src="game.js"></script>
+    <style>
+      /* Hide the off-screen input element */
+      #offscreen-input {
+        position: fixed;
+        left: -1000px;
+      }
+    </style>
   </head>
-  <body></body>
+  <body>
+    <input type="text" id="offscreen-input" />
+  </body>
 </html>

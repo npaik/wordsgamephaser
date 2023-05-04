@@ -48,6 +48,17 @@ gameScene.preload = function () {
 
 // called once after the preload ends
 gameScene.create = function () {
+  const offscreenInput = document.getElementById("offscreen-input");
+  offscreenInput.addEventListener("input", (event) => {
+    typedWord = event.target.value;
+    typedWordText.setText(typedWord);
+  });
+  offscreenInput.addEventListener("focus", () => {
+    if (!gameStarted) {
+      offscreenInput.blur();
+    }
+  });
+
   highestScoreText = this.add.text(
     this.sys.game.config.width / 2,
     0,
@@ -99,6 +110,8 @@ gameScene.create = function () {
   startButton.once("pointerdown", () => {
     gameStarted = true;
     startButton.setVisible(false);
+
+    offscreenInput.focus();
 
     if (!timerEventAdded) {
       this.time.addEvent({
