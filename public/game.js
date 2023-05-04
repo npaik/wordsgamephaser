@@ -27,7 +27,8 @@ let gameStarted = false;
 let gameOver = false;
 let typedWordText;
 let scoreSaved = false;
-let top10ScoresShown = false;
+let gameOverDisplayed = false;
+let top10ScoresDisplayed = false;
 
 // Load assets
 gameScene.preload = function () {
@@ -373,26 +374,29 @@ function randomizeTextCapitalization(text) {
 
 // game over display
 function gameOverDisplay() {
-  // Display "Game Over" text
-  const gameOverText = this.add.text(
-    this.sys.game.config.width / 2,
-    this.sys.game.config.height / 2 - 50,
-    "Game Over",
-    { fontSize: "32px", fontStyle: "bold", color: "#FFFFFF" }
-  );
-  gameOverText.setOrigin(0.5, 0.5);
+  if (!gameOverDisplayed) {
+    // Add this condition to check if the game over text has been displayed before
+    // Display "Game Over" text
+    const gameOverText = this.add.text(
+      this.sys.game.config.width / 2,
+      this.sys.game.config.height / 2 - 50,
+      "Game Over",
+      { fontSize: "32px", fontStyle: "bold", color: "#FFFFFF" }
+    );
+    gameOverText.setOrigin(0.5, 0.5);
 
-  // Check if the user achieved the highest score
-  getHighestScore().then((highestScore) => {
-    if (score > highestScore) {
-      handleHighScoreName(score);
-    }
-  });
+    // Check if the user achieved the highest score
+    getHighestScore().then((highestScore) => {
+      if (score > highestScore) {
+        handleHighScoreName(score);
+      }
+    });
 
-  // Show the top 10 scores
-  showTop10Scores.call(this);
+    // Show the top 10 scores
+    showTop10Scores.call(this);
 
-  // The start button and its event listener have been removed
+    gameOverDisplayed = true;
+  }
 }
 
 // reset the game
@@ -408,26 +412,30 @@ function resetGame() {
 
 // get highest score from the server
 async function getHighestScore() {
-  try {
-    const response = await fetch("/api/scores");
+  if (getHighestScore.highestScore === undefined) {
+    try {
+      const response = await fetch("/api/scores");
 
-    if (response.ok) {
-      const scores = await response.json();
-      const highestScoreEntry = scores[0];
-      const highestScore = highestScoreEntry ? highestScoreEntry.score : 0;
-      const highestUsername = highestScoreEntry
-        ? highestScoreEntry.username
-        : "";
-      highestScoreText.setText(
-        `Highest Score: ${highestScore} by ${highestUsername}`
-      );
-      return highestScore;
-    } else {
-      console.log("Error getting highest score");
+      if (response.ok) {
+        const scores = await response.json();
+        const highestScoreEntry = scores[0];
+        const highestScore = highestScoreEntry ? highestScoreEntry.score : 0;
+        const highestUsername = highestScoreEntry
+          ? highestScoreEntry.username
+          : "";
+        highestScoreText.setText(
+          `Highest Score: ${highestScore} by ${highestUsername}`
+        );
+        getHighestScore.highestScore = highestScore;
+      } else {
+        console.log("Error getting highest score");
+      }
+    } catch (error) {
+      console.warn(error);
     }
-  } catch (error) {
-    console.warn(error);
   }
+
+  return getHighestScore.highestScore;
 }
 
 async function showTop10Scores() {
