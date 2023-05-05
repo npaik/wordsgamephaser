@@ -8,7 +8,6 @@ const app = express();
 const path = require("path");
 const api = express.Router();
 
-// app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
