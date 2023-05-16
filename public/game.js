@@ -176,7 +176,7 @@ gameScene.create = function () {
 
       planetsRemoved += 1;
       // every 3 planets removed, increase the falling speed of planets
-      if (planetsRemoved % 3 === 0) {
+      if (planetsRemoved % 1 === 0) {
         // increase the falling speed of planets by 30%
         scoreFactor += 0.3;
       }
@@ -226,13 +226,25 @@ gameScene.create = function () {
   highestScoreText.setOrigin(0.5, 0); // This will center the text horizontally based on its position
 };
 
-// this is called up to 60 times per second
 gameScene.update = function () {
   if (!gameOver && gameStarted) {
+    let planetsToDestroy = []; // array to hold planets that need to be destroyed
     planets.children.iterate(function (planetContainer) {
       // increase falling speed of planets
       planetContainer.y += 0.2 * scoreFactor;
       planetContainer.update(); // Update the text container position
+
+      // check if planet has hit the bottom of the screen
+      if (planetContainer.y >= this.sys.game.config.height) {
+        planetsToDestroy.push(planetContainer); // add the planet to the destroy list
+        score -= 0.5; // deduct one from the score
+        scoreText.setText(`Score: ${score}`); // update the score display
+      }
+    }, this); // pass 'this' as the context for the callback
+
+    // destroy the planets that need to be destroyed
+    planetsToDestroy.forEach(function (planet) {
+      planet.destroy();
     });
   } else if (gameOver && !scoreSaved) {
     planets.children.iterate(function (planetContainer) {
@@ -317,7 +329,7 @@ function spawnPlanets() {
     const scaleFactors = [1.5, 2, 2, 1.5, 1, 0.8, 1, 1, 1];
     const randomIndex = Math.floor(Math.random() * planetKeys.length);
     const randomX = Math.random() * (this.sys.game.config.width - 100) + 50;
-    const randomDelay = Math.random() * 1000 + 500;
+    const randomDelay = Math.random() * 1000 + 1000;
     const planet = planets.create(randomX, -50, planetKeys[randomIndex]);
     planet.setScale(scaleFactors[randomIndex]);
     const textStyle = { font: "16px Arial", fill: "#ffffff" };
@@ -360,14 +372,16 @@ function spawnPlanets() {
 
 // Randomize capitalization of a string
 function randomizeTextCapitalization(text) {
-  let randomizedText = "";
+  let randomizedText = text.toLowerCase();
 
-  for (let i = 0; i < text.length; i++) {
-    const randomBoolean = Math.random() >= 0.5;
-    randomizedText += randomBoolean
-      ? text[i].toUpperCase()
-      : text[i].toLowerCase();
-  }
+  // select a random position in the text
+  const randomPosition = Math.floor(Math.random() * text.length);
+
+  // only capitalize the letter at the random position
+  randomizedText =
+    randomizedText.slice(0, randomPosition) +
+    randomizedText.charAt(randomPosition).toUpperCase() +
+    randomizedText.slice(randomPosition + 1);
 
   return randomizedText;
 }
